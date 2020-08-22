@@ -1,5 +1,6 @@
 ﻿using Catalog.API.Data.Interfaces;
 using Catalog.API.Entities;
+using Catalog.API.Settings;
 using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
@@ -10,10 +11,18 @@ namespace Catalog.API.Data
 {
     public class CatalogContext : ICatalogContext
     {
-        public CatalogContext()
-        {
+        private readonly ICatalogDatabaseSettings _settings;
 
+        public CatalogContext(ICatalogDatabaseSettings settings)
+        {
+            _settings = settings ?? throw new NullReferenceException();
+
+            var client = new MongoClient(_settings.CollectionString);
+            var database = client.GetDatabase(_settings.DatabaseName);
+
+            Products = database.GetCollection<Product>(_settings.CollectionName);
         }
-        public IMongoCollection<Product> Products => throw new NotImplementedException();
+
+        public IMongoCollection<Product> Products { get; }
     }
 }
