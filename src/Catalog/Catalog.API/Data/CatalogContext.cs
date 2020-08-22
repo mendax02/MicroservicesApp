@@ -15,7 +15,7 @@ namespace Catalog.API.Data
 
         public CatalogContext(ICatalogDatabaseSettings settings)
         {
-            _settings = settings ?? throw new NullReferenceException();
+            _settings = settings ?? throw new ArgumentNullException(nameof(settings));
 
             var client = new MongoClient(_settings.CollectionString);
             var database = client.GetDatabase(_settings.DatabaseName);
