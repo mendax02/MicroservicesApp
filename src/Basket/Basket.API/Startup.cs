@@ -1,12 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Basket.API.Data;
 using Basket.API.Data.Interfaces;
 using Basket.API.Repositories;
 using Basket.API.Repositories.Interfaces;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -14,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
 
 namespace Basket.API
@@ -31,17 +27,29 @@ namespace Basket.API
         public void ConfigureServices(IServiceCollection services)
         {
 
-            services.AddSingleton<ConnectionMultiplexer>(sp=>
+            services.AddSingleton<ConnectionMultiplexer>(sp =>
             {
                 var configuration = ConfigurationOptions.Parse(Configuration.GetConnectionString("Redis"),
                     true);
                 return ConnectionMultiplexer.Connect(configuration);
             });
+
             services.AddTransient<IBasketContext, BasketContext>();
 
             services.AddTransient<IBasketRepository, BasketRepository>();
+
+            // Inject swagger
+            services.AddSwaggerGen(x =>
+            {
+                x.SwaggerDoc("v1", new OpenApiInfo
+                {
+                    Title = "Basket Api",
+                    Version = "v1"
+                });
+            });
+
             services.AddControllers();
-            
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -60,6 +68,9 @@ namespace Basket.API
             {
                 endpoints.MapControllers();
             });
+            // Use swagger middleware
+            app.UseSwagger();
+            app.UseSwaggerUI(x => x.SwaggerEndpoint("/swagger/v1/swagger.json", "Basket API V1"));
         }
     }
 }
