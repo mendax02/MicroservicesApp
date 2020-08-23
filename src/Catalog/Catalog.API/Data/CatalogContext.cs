@@ -17,7 +17,7 @@ namespace Catalog.API.Data
         {
             _settings = settings ?? throw new ArgumentNullException(nameof(settings));
 
-            var client = new MongoClient(_settings.CollectionString);
+            var client = new MongoClient(_settings.ConnectionString);
             var database = client.GetDatabase(_settings.DatabaseName);
 
             Products = database.GetCollection<Product>(_settings.CollectionName);
