@@ -15,6 +15,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.OpenApi.Models;
 
 namespace Catalog.API
 {
@@ -40,6 +41,13 @@ namespace Catalog.API
             services.AddTransient<ICatalogContext, CatalogContext>();
             services.AddTransient<IProductRepository, ProductRepository>();
 
+            // Generates Swagger Documentation
+            services.AddSwaggerGen(x => x.SwaggerDoc("v1", new OpenApiInfo
+            {
+                Title = "Catalog API",
+                Version = "v1"
+            }));
+
 
         }
 
@@ -59,6 +67,9 @@ namespace Catalog.API
             {
                 endpoints.MapControllers();
             });
+
+            app.UseSwagger();
+            app.UseSwaggerUI(x => x.SwaggerEndpoint("/swagger/v1/swagger.json", "Catalog API V1"));
         }
     }
 }
