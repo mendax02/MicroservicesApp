@@ -64,14 +64,14 @@ namespace Basket.API.Controllers
         public async Task<IActionResult> CheckOut([FromBody] BasketCheckOut basketCheckOut)
         {
 
-            //get total price of basket
+            //Get total price of basket
             var basket = await _repository.GetBasket(basketCheckOut.UserName);
 
             if (basket == null)
             {
                 return BadRequest();
             }
-            //remove the basket
+            //Remove the basket
             var basketRemoved = await _repository.DeleteBasket(basket.UserName);
 
             if (!basketRemoved)
@@ -83,7 +83,7 @@ namespace Basket.API.Controllers
             eventMessage.RequestId = Guid.NewGuid();
 
             eventMessage.TotalPrice = basket.TotalPrice;
-            // send checkout event to RabbitMQ
+            // Send checkout event to RabbitMQ
             try
             {
 
