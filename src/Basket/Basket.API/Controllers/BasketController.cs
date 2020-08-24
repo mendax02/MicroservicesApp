@@ -1,5 +1,9 @@
-﻿using Basket.API.Entites;
+﻿using AutoMapper;
+using Basket.API.Entites;
 using Basket.API.Repositories.Interfaces;
+using EventBusRabbitMQ.Common;
+using EventBusRabbitMQ.Events;
+using EventBusRabbitMQ.Producer;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -16,10 +20,14 @@ namespace Basket.API.Controllers
     {
 
         private readonly IBasketRepository _repository;
+        private readonly IMapper _mapper;
+        private readonly EventBusRabbitMQProducer _eventBus;
 
-        public BasketController(IBasketRepository repository)
+        public BasketController(IBasketRepository repository, IMapper mapper, EventBusRabbitMQProducer eventBus)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
+            _eventBus = eventBus ?? throw new ArgumentNullException(nameof(eventBus));
         }
 
         [HttpGet]
@@ -47,6 +55,47 @@ namespace Basket.API.Controllers
             var deleted = await _repository.DeleteBasket(userName);
 
             return Ok(deleted);
+        }
+
+        [Route("[action]")]
+        [HttpPost]
+        [ProducesResponseType((int)HttpStatusCode.Accepted)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+        public async Task<IActionResult> CheckOut([FromBody] BasketCheckOut basketCheckOut)
+        {
+
+            //get total price of basket
+            var basket = await _repository.GetBasket(basketCheckOut.UserName);
+
+            if (basket == null)
+            {
+                return BadRequest();
+            }
+            //remove the basket
+            var basketRemoved = await _repository.DeleteBasket(basket.UserName);
+
+            if (!basketRemoved)
+            {
+                return BadRequest();
+            }
+            // Use Auto Mapper to Map BasketCheckOut to BasketCheckOutEvent
+            var eventMessage = _mapper.Map<BasketCheckOutEvent>(basketCheckOut);
+            eventMessage.RequestId = Guid.NewGuid();
+
+            eventMessage.TotalPrice = basket.TotalPrice;
+            // send checkout event to RabbitMQ
+            try
+            {
+
+                _eventBus.PublishBasketCheckOut(EventBusConstants.BasketCheckOutQueue, eventMessage);
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
+            return Accepted();
         }
     }
 }
