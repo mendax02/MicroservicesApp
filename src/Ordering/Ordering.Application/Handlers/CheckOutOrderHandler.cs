@@ -12,13 +12,13 @@ using System.Threading.Tasks;
 
 namespace Ordering.Application.Handlers
 {
-    public class CheckOutOrderHandler : IRequestHandler<CheckOutOrderCommand, OrderResponse>
+    public class CheckOutorderHandler : IRequestHandler<CheckOutOrderCommand, OrderResponse>
     {
         private readonly IOrderRepository _orderRepository;
 
-        public CheckOutOrderHandler(IOrderRepository orderRepository)
+        public CheckOutorderHandler(IOrderRepository orderRepository)
         {
-            _orderRepository = orderRepository;
+            _orderRepository = orderRepository ?? throw new ArgumentNullException(nameof(orderRepository)); ;
         }
 
         public async Task<OrderResponse> Handle(CheckOutOrderCommand request, CancellationToken cancellationToken)
